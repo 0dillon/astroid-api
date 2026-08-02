@@ -1,0 +1,40 @@
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserRole } from '@prisma/client';
+import { MemoryService } from './memory.service';
+import { createMemorySchema, CreateMemoryInput } from './memory.dto';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
+import { PaginationQuery, paginationQuerySchema } from '../../common/helpers/pagination';
+
+@ApiTags('memory')
+@Controller('memory')
+export class MemoryController {
+  constructor(private readonly memoryService: MemoryService) {}
+
+  @Get()
+  @ApiOperation({ summary: 'Search the financial memory (task/reason/summary)' })
+  list(
+    @CurrentUser('organizationId') organizationId: string,
+    @Query(new ZodValidationPipe(paginationQuerySchema)) query: PaginationQuery,
+  ) {
+    return this.memoryService.list(organizationId, query);
+  }
+
+  @Post()
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.FINANCE, UserRole.DEVELOPER)
+  @ApiOperation({ summary: 'Record an agent decision in memory' })
+  create(
+    @CurrentUser('organizationId') organizationId: string,
+    @Body(new ZodValidationPipe(createMemorySchema)) body: CreateMemoryInput,
+  ) {
+    return this.memoryService.create(organizationId, body);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a memory record' })
+  findOne(@CurrentUser('organizationId') organizationId: string, @Param('id') id: string) {
+    return this.memoryService.getOrThrow(organizationId, id);
+  }
+}

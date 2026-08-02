@@ -1,0 +1,662 @@
+// Astroid API — Prisma schema
+// The historical record of every financial decision made by autonomous AI agents.
+// Multi-tenant by design: every major entity belongs to an Organization.
+// Timestamps are UTC (timestamptz). Soft deletes via deletedAt where applicable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum OrganizationPlan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  FINANCE
+  DEVELOPER
+  AUDITOR
+  VIEWER
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum AgentRole {
+  FINANCE
+  RESEARCH
+  OPERATIONS
+  PROCUREMENT
+  CUSTOM
+}
+
+enum AgentStatus {
+  ACTIVE
+  PAUSED
+  SUSPENDED
+  ARCHIVED
+}
+
+enum WalletType {
+  AGENT
+  TREASURY
+  ESCROW
+  SHARED
+  PERSONAL
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  PAUSED
+  ARCHIVED
+}
+
+enum StellarNetwork {
+  TESTNET
+  PUBLIC
+  FUTURENET
+}
+
+enum PolicyType {
+  MAX_AMOUNT
+  MIN_AMOUNT
+  ALLOWED_ASSETS
+  BLOCKED_ASSETS
+  DAILY_BUDGET
+  WEEKLY_BUDGET
+  MONTHLY_BUDGET
+  ALLOWED_RECIPIENTS
+  BLOCKED_RECIPIENTS
+  TIME_WINDOW
+  DEPARTMENT_RULE
+  AGENT_RULE
+  EMERGENCY_LOCK
+  COMPOSITE
+}
+
+enum BudgetPeriod {
+  ONE_TIME
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum TransactionStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  SUBMITTED
+  CONFIRMED
+  COMPLETED
+  REJECTED
+  EXPIRED
+  CANCELLED
+  FAILED
+}
+
+enum RiskBand {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProposalStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  EXECUTED
+  CANCELLED
+}
+
+enum ApprovalType {
+  SINGLE
+  DUAL
+  MULTISIG
+  ROLE
+  COMMITTEE
+  EMERGENCY
+}
+
+enum ApprovalDecision {
+  APPROVED
+  REJECTED
+  DELEGATED
+  EXPIRED
+}
+
+enum NotificationType {
+  BUDGET_EXCEEDED
+  PROPOSAL_APPROVED
+  PROPOSAL_REJECTED
+  WALLET_FUNDED
+  PAYMENT_FAILED
+  POLICY_VIOLATION
+  RISK_ALERT
+  APPROVAL_REQUIRED
+  INFO
+}
+
+enum NotificationChannel {
+  DASHBOARD
+  EMAIL
+  DISCORD
+  SLACK
+  WEBHOOK
+}
+
+// ---------------------------------------------------------------------------
+// 1. Organization
+// ---------------------------------------------------------------------------
+
+model Organization {
+  id          String             @id @default(uuid(7))
+  name        String
+  slug        String             @unique
+  logo        String?
+  description String?
+  plan        OrganizationPlan   @default(FREE)
+  status      OrganizationStatus @default(ACTIVE)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  deletedAt   DateTime?
+
+  users         User[]
+  agents        Agent[]
+  wallets       Wallet[]
+  policies      Policy[]
+  budgets       Budget[]
+  transactions  Transaction[]
+  auditLogs     AuditLog[]
+  apiKeys       ApiKey[]
+  webhooks      Webhook[]
+  notifications Notification[]
+  memoryRecords MemoryRecord[]
+  domainEvents  DomainEvent[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("organizations")
+}
+
+// ---------------------------------------------------------------------------
+// 2. User
+// ---------------------------------------------------------------------------
+
+model User {
+  id             String     @id @default(uuid(7))
+  organizationId String
+  name           String
+  email          String     @unique
+  avatar         String?
+  passwordHash   String?
+  role           UserRole   @default(VIEWER)
+  status         UserStatus @default(ACTIVE)
+  lastLogin      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions      Session[]
+  approvals     Approval[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+  apiKeys       ApiKey[]
+  credentials   PasskeyCredential[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([organizationId, createdAt])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// 3. Agent
+// ---------------------------------------------------------------------------
+
+model Agent {
+  id              String      @id @default(uuid(7))
+  organizationId  String
+  primaryWalletId String?     @unique
+  name            String
+  description     String?
+  provider        String?
+  model           String?
+  role            AgentRole   @default(CUSTOM)
+  status          AgentStatus @default(ACTIVE)
+  capabilities    String[]    @default([])
+  metadata        Json        @default("{}")
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  deletedAt       DateTime?
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryWallet Wallet?        @relation("AgentPrimaryWallet", fields: [primaryWalletId], references: [id])
+  wallets       Wallet[]       @relation("WalletOwnerAgent")
+  policies      Policy[]
+  budgets       Budget[]
+  transactions  Transaction[]
+  memoryRecords MemoryRecord[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([organizationId, status])
+  @@map("agents")
+}
+
+// ---------------------------------------------------------------------------
+// 4. Wallet
+// ---------------------------------------------------------------------------
+
+model Wallet {
+  id             String         @id @default(uuid(7))
+  organizationId String
+  agentId        String?
+  stellarAddress String         @unique
+  label          String?
+  walletType     WalletType     @default(AGENT)
+  network        StellarNetwork @default(TESTNET)
+  status         WalletStatus   @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent           Agent?        @relation("WalletOwnerAgent", fields: [agentId], references: [id])
+  primaryForAgent Agent?        @relation("AgentPrimaryWallet")
+  transactions    Transaction[]
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([status])
+  @@index([stellarAddress])
+  @@index([organizationId, createdAt])
+  @@map("wallets")
+}
+
+// ---------------------------------------------------------------------------
+// 5. Policy  (JSONB configuration supports many policy types w/o schema change)
+// ---------------------------------------------------------------------------
+
+model Policy {
+  id             String     @id @default(uuid(7))
+  organizationId String
+  agentId        String?
+  name           String
+  description    String?
+  type           PolicyType
+  configuration  Json       @default("{}")
+  priority       Int        @default(100)
+  enabled        Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent        Agent?        @relation(fields: [agentId], references: [id])
+  transactions Transaction[]
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([enabled])
+  @@index([organizationId, enabled])
+  @@map("policies")
+}
+
+// ---------------------------------------------------------------------------
+// 6. Budget  (hierarchy: Organization -> Department -> Project -> Agent)
+// ---------------------------------------------------------------------------
+
+model Budget {
+  id             String       @id @default(uuid(7))
+  organizationId String
+  parentBudgetId String?
+  agentId        String?
+  name           String
+  currency       String       @default("USDC")
+  limitAmount    Decimal      @default(0) @db.Decimal(30, 7)
+  spent          Decimal      @default(0) @db.Decimal(30, 7)
+  period         BudgetPeriod @default(MONTHLY)
+  periodStart    DateTime     @default(now())
+  rollover       Boolean      @default(false)
+  enabled        Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentBudget Budget?       @relation("BudgetHierarchy", fields: [parentBudgetId], references: [id])
+  children     Budget[]      @relation("BudgetHierarchy")
+  agent        Agent?        @relation(fields: [agentId], references: [id])
+  transactions Transaction[]
+
+  @@index([organizationId])
+  @@index([parentBudgetId])
+  @@index([agentId])
+  @@index([organizationId, createdAt])
+  @@map("budgets")
+}
+
+// ---------------------------------------------------------------------------
+// 7. Transaction
+// ---------------------------------------------------------------------------
+
+model Transaction {
+  id                String            @id @default(uuid(7))
+  organizationId    String
+  walletId          String
+  agentId           String?
+  policyId          String?
+  budgetId          String?
+  asset             String            @default("XLM")
+  amount            Decimal           @db.Decimal(30, 7)
+  senderAddress     String?
+  recipientAddress  String
+  memo              String?
+  purpose           String?
+  status            TransactionStatus @default(DRAFT)
+  riskScore         Int               @default(0)
+  riskBand          RiskBand          @default(LOW)
+  requiresApproval  Boolean           @default(false)
+  stellarHash       String?
+  confirmationCount Int               @default(0)
+  gasEstimate       Decimal?          @db.Decimal(30, 7)
+  metadata          Json              @default("{}")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  wallet        Wallet         @relation(fields: [walletId], references: [id])
+  agent         Agent?         @relation(fields: [agentId], references: [id])
+  policy        Policy?        @relation(fields: [policyId], references: [id])
+  budget        Budget?        @relation(fields: [budgetId], references: [id])
+  proposal      Proposal?
+  memoryRecords MemoryRecord[]
+
+  @@index([organizationId])
+  @@index([walletId])
+  @@index([agentId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([stellarHash])
+  @@index([riskScore])
+  @@index([organizationId, createdAt])
+  @@index([walletId, status])
+  @@index([agentId, status])
+  @@map("transactions")
+}
+
+// ---------------------------------------------------------------------------
+// 8. Proposal
+// ---------------------------------------------------------------------------
+
+model Proposal {
+  id             String         @id @default(uuid(7))
+  organizationId String
+  transactionId  String         @unique
+  title          String
+  description    String?
+  approvalType   ApprovalType   @default(SINGLE)
+  requiredApprovals Int         @default(1)
+  status         ProposalStatus @default(PENDING)
+  expiresAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  approvals   Approval[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([transactionId])
+  @@index([createdAt])
+  @@map("proposals")
+}
+
+// ---------------------------------------------------------------------------
+// 9. Approval
+// ---------------------------------------------------------------------------
+
+model Approval {
+  id         String           @id @default(uuid(7))
+  proposalId String
+  userId     String
+  decision   ApprovalDecision
+  comment    String?
+  createdAt  DateTime         @default(now())
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([proposalId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("approvals")
+}
+
+// ---------------------------------------------------------------------------
+// 10. Audit Log  (append-only from the application perspective)
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id             String   @id @default(uuid(7))
+  organizationId String
+  userId         String?
+  action         String
+  entity         String
+  entityId       String?
+  oldValue       Json?
+  newValue       Json?
+  ipAddress      String?
+  device         String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// 11. Notification
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id             String              @id @default(uuid(7))
+  organizationId String
+  userId         String
+  title          String
+  body           String
+  type           NotificationType    @default(INFO)
+  channel        NotificationChannel @default(DASHBOARD)
+  read           Boolean             @default(false)
+  metadata       Json                @default("{}")
+  createdAt      DateTime            @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ---------------------------------------------------------------------------
+// 12. API Key  (never store raw keys — only hashes)
+// ---------------------------------------------------------------------------
+
+model ApiKey {
+  id             String    @id @default(uuid(7))
+  organizationId String
+  createdById    String?
+  name           String
+  prefix         String
+  hashedKey      String    @unique
+  permissions    String[]  @default([])
+  lastUsedAt     DateTime?
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId])
+  @@index([prefix])
+  @@map("api_keys")
+}
+
+// ---------------------------------------------------------------------------
+// 13. Webhook  (HMAC secret; dot.case event subscriptions)
+// ---------------------------------------------------------------------------
+
+model Webhook {
+  id             String   @id @default(uuid(7))
+  organizationId String
+  url            String
+  secret         String
+  events         String[] @default([])
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([enabled])
+  @@map("webhooks")
+}
+
+// ---------------------------------------------------------------------------
+// 14. Session
+// ---------------------------------------------------------------------------
+
+model Session {
+  id               String    @id @default(uuid(7))
+  userId           String
+  device           String?
+  browser          String?
+  ipAddress        String?
+  location         String?
+  refreshTokenHash String    @unique
+  lastActivityAt   DateTime  @default(now())
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ---------------------------------------------------------------------------
+// 15. Memory Record  (financial memory — powers explainability & search)
+// ---------------------------------------------------------------------------
+
+model MemoryRecord {
+  id             String   @id @default(uuid(7))
+  organizationId String
+  agentId        String?
+  transactionId  String?
+  task           String?
+  reason         String?
+  conversationId String?
+  policyUsed     String?
+  risk           Int?
+  summary        String?
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  agent        Agent?       @relation(fields: [agentId], references: [id])
+  transaction  Transaction? @relation(fields: [transactionId], references: [id])
+
+  @@index([organizationId])
+  @@index([agentId])
+  @@index([transactionId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("memory_records")
+}
+
+// ---------------------------------------------------------------------------
+// Passkey credential (WebAuthn-ready scaffold)
+// ---------------------------------------------------------------------------
+
+model PasskeyCredential {
+  id           String   @id @default(uuid(7))
+  userId       String
+  credentialId String   @unique
+  publicKey    String
+  counter      Int      @default(0)
+  deviceName   String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkey_credentials")
+}
+
+// ---------------------------------------------------------------------------
+// Domain Event  (append-only event-sourcing / immutable event ledger)
+// ---------------------------------------------------------------------------
+
+model DomainEvent {
+  id             String   @id @default(uuid(7))
+  organizationId String?
+  name           String
+  aggregateType  String
+  aggregateId    String?
+  payload        Json     @default("{}")
+  actorId        String?
+  sequence       BigInt   @default(autoincrement())
+  occurredAt     DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@index([name])
+  @@index([aggregateType, aggregateId])
+  @@index([occurredAt])
+  @@map("domain_events")
+}

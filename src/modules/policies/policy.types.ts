@@ -1,0 +1,80 @@
+import { z } from 'zod';
+
+/**
+ * The JSONB `configuration` shape stored on a Policy. A single flexible object
+ * lets us support many policy types (max/min amount, asset allow/block,
+ * recipient allow/block, periodic budgets, time windows, approval) without
+ * schema migrations. All fields are optional; the engine only enforces those
+ * that are present.
+ */
+export const policyConfigurationSchema = z
+  .object({
+    maxAmount: z.number().nonnegative().optional(),
+    minAmount: z.number().nonnegative().optional(),
+    allowedAssets: z.array(z.string()).optional(),
+    blockedAssets: z.array(z.string()).optional(),
+    allowedRecipients: z.array(z.string()).optional(),
+    blockedRecipients: z.array(z.string()).optional(),
+    dailyLimit: z.number().nonnegative().optional(),
+    weeklyLimit: z.number().nonnegative().optional(),
+    monthlyLimit: z.number().nonnegative().optional(),
+    /** Allowed hour-of-day window in UTC, inclusive start, exclusive end (0-24). */
+    timeWindow: z
+      .object({
+        startHour: z.number().int().min(0).max(23),
+        endHour: z.number().int().min(1).max(24),
+        days: z.array(z.number().int().min(0).max(6)).optional(),
+      })
+      .optional(),
+    requiresApproval: z.boolean().optional(),
+    /** Any transaction at or above this amount forces an approval proposal. */
+    approvalThreshold: z.number().nonnegative().optional(),
+    /** When true, blocks ALL spending (emergency lock / kill switch). */
+    emergencyLock: z.boolean().optional(),
+  })
+  .strict();
+
+export type PolicyConfiguration = z.infer<typeof policyConfigurationSchema>;
+
+/** The transaction intent evaluated against policies. */
+export interface TransactionIntent {
+  organizationId: string;
+  agentId?: string;
+  walletId?: string;
+  asset: string;
+  amount: number;
+  recipientAddress: string;
+  /** Evaluation time; defaults to now. Injectable for deterministic tests. */
+  at?: Date;
+  /** Spend already made in each period, for budget-style policies. */
+  spentToday?: number;
+  spentThisWeek?: number;
+  spentThisMonth?: number;
+}
+
+export interface PolicyViolation {
+  policyId: string;
+  policyName: string;
+  code: string;
+  message: string;
+}
+
+export interface PolicyEvaluationResult {
+  passed: boolean;
+  requiresApproval: boolean;
+  violations: PolicyViolation[];
+  /** Ids of the policies that were considered during evaluation. */
+  evaluatedPolicyIds: string[];
+  /** The highest-priority policy that matched, if any. */
+  matchedPolicyId?: string;
+}
+
+/** Minimal projection of a Policy row the engine needs — decoupled from Prisma. */
+export interface EvaluablePolicy {
+  id: string;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  agentId?: string | null;
+  configuration: PolicyConfiguration;
+}

@@ -1,0 +1,65 @@
+/**
+ * Machine-readable error codes returned to API clients. Every domain failure
+ * maps to one of these; clients switch on `error.code`, never on the message.
+ */
+export enum ErrorCode {
+  // Generic
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+  CONFLICT = 'CONFLICT',
+  BAD_REQUEST = 'BAD_REQUEST',
+  RATE_LIMITED = 'RATE_LIMITED',
+
+  // Auth / authz
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
+  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
+  INVALID_TOKEN = 'INVALID_TOKEN',
+  SESSION_REVOKED = 'SESSION_REVOKED',
+
+  // Financial governance
+  POLICY_VIOLATION = 'POLICY_VIOLATION',
+  BUDGET_EXCEEDED = 'BUDGET_EXCEEDED',
+  INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
+  RISK_TOO_HIGH = 'RISK_TOO_HIGH',
+  APPROVAL_REQUIRED = 'APPROVAL_REQUIRED',
+  PROPOSAL_EXPIRED = 'PROPOSAL_EXPIRED',
+  PROPOSAL_NOT_PENDING = 'PROPOSAL_NOT_PENDING',
+  WALLET_FROZEN = 'WALLET_FROZEN',
+  AGENT_NOT_ACTIVE = 'AGENT_NOT_ACTIVE',
+  EMERGENCY_LOCK = 'EMERGENCY_LOCK',
+
+  // Stellar
+  STELLAR_ERROR = 'STELLAR_ERROR',
+  INVALID_STELLAR_ADDRESS = 'INVALID_STELLAR_ADDRESS',
+}
+
+/** HTTP status codes paired with the domain error codes above. */
+export const ERROR_STATUS: Record<ErrorCode, number> = {
+  [ErrorCode.INTERNAL_ERROR]: 500,
+  [ErrorCode.VALIDATION_ERROR]: 422,
+  [ErrorCode.NOT_FOUND]: 404,
+  [ErrorCode.CONFLICT]: 409,
+  [ErrorCode.BAD_REQUEST]: 400,
+  [ErrorCode.RATE_LIMITED]: 429,
+  [ErrorCode.UNAUTHORIZED]: 401,
+  [ErrorCode.FORBIDDEN]: 403,
+  [ErrorCode.INVALID_CREDENTIALS]: 401,
+  [ErrorCode.TOKEN_EXPIRED]: 401,
+  [ErrorCode.INVALID_TOKEN]: 401,
+  [ErrorCode.SESSION_REVOKED]: 401,
+  [ErrorCode.POLICY_VIOLATION]: 422,
+  [ErrorCode.BUDGET_EXCEEDED]: 422,
+  [ErrorCode.INSUFFICIENT_FUNDS]: 422,
+  [ErrorCode.RISK_TOO_HIGH]: 422,
+  [ErrorCode.APPROVAL_REQUIRED]: 202,
+  [ErrorCode.PROPOSAL_EXPIRED]: 410,
+  [ErrorCode.PROPOSAL_NOT_PENDING]: 409,
+  [ErrorCode.WALLET_FROZEN]: 423,
+  [ErrorCode.AGENT_NOT_ACTIVE]: 409,
+  [ErrorCode.EMERGENCY_LOCK]: 423,
+  [ErrorCode.STELLAR_ERROR]: 502,
+  [ErrorCode.INVALID_STELLAR_ADDRESS]: 400,
+};
