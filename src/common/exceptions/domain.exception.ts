@@ -64,3 +64,15 @@ export class RiskTooHighException extends DomainException {
     super(ErrorCode.RISK_TOO_HIGH, message, details);
   }
 }
+
+/**
+ * A documented endpoint whose implementation is intentionally deferred (e.g.
+ * WebAuthn passkeys, which require the `@simplewebauthn/server` package and a
+ * configured relying party). Returns 501 so clients receive an honest, typed
+ * signal instead of a confusing 404 — see user_task.md / latter.md.
+ */
+export class NotImplementedException extends DomainException {
+  constructor(message = 'This endpoint is not implemented yet') {
+    super(ErrorCode.NOT_IMPLEMENTED, message);
+  }
+}

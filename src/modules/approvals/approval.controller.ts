@@ -43,4 +43,40 @@ export class ApprovalController {
   ) {
     return this.approvalService.decide(user.organizationId, user.id, id, body);
   }
+
+  @Post(':id/approve')
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.FINANCE)
+  @ApiOperation({
+    summary: 'Approve a proposal (PRD alias of POST /:id/decision)',
+    description:
+      'Records an APPROVED vote. When the approval threshold is met the ' +
+      'underlying transaction is executed automatically.',
+  })
+  approve(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(decisionCommentSchema)) body: DecisionCommentInput,
+  ) {
+    return this.approvalService.decide(user.organizationId, user.id, id, {
+      decision: ApprovalDecision.APPROVED,
+      comment: body.comment,
+    });
+  }
+
+  @Post(':id/reject')
+  @Roles(UserRole.OWNER, UserRole.ADMIN, UserRole.FINANCE)
+  @ApiOperation({
+    summary: 'Reject a proposal (PRD alias of POST /:id/decision)',
+    description: 'A single rejection rejects the whole proposal and cancels the transaction.',
+  })
+  reject(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(decisionCommentSchema)) body: DecisionCommentInput,
+  ) {
+    return this.approvalService.decide(user.organizationId, user.id, id, {
+      decision: ApprovalDecision.REJECTED,
+      comment: body.comment,
+    });
+  }
 }

@@ -18,7 +18,10 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ThrottleTierDecorator } from '../../common/decorators/throttle-tier.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
 import { AuthenticatedUser } from '../../common/interfaces/authenticated-user.interface';
-import { UnauthorizedException } from '../../common/exceptions/domain.exception';
+import {
+  NotImplementedException,
+  UnauthorizedException,
+} from '../../common/exceptions/domain.exception';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -70,6 +73,46 @@ export class AuthController {
   @ApiOperation({ summary: 'Get the current authenticated user' })
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.authService.me(user);
+  }
+
+  @Get('session')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Get the current session principal',
+    description: 'PRD alias of GET /auth/me — resolves the authenticated user.',
+  })
+  session(@CurrentUser() user: AuthenticatedUser) {
+    return this.authService.me(user);
+  }
+
+  @Public()
+  @Post('passkey/register')
+  @ThrottleTierDecorator('auth')
+  @ApiOperation({
+    summary: 'Begin WebAuthn passkey registration',
+    description:
+      'Not implemented yet: requires the @simplewebauthn/server package and a ' +
+      'configured relying party (PASSKEY_RP_ID / PASSKEY_ORIGIN). See user_task.md.',
+  })
+  passkeyRegister(): never {
+    throw new NotImplementedException(
+      'Passkey registration is not implemented yet — install @simplewebauthn/server and configure the relying party.',
+    );
+  }
+
+  @Public()
+  @Post('passkey/verify')
+  @ThrottleTierDecorator('auth')
+  @ApiOperation({
+    summary: 'Verify a WebAuthn passkey assertion',
+    description:
+      'Not implemented yet: requires the @simplewebauthn/server package and a ' +
+      'configured relying party (PASSKEY_RP_ID / PASSKEY_ORIGIN). See user_task.md.',
+  })
+  passkeyVerify(): never {
+    throw new NotImplementedException(
+      'Passkey verification is not implemented yet — install @simplewebauthn/server and configure the relying party.',
+    );
   }
 
   /** Extracts best-effort device metadata for session records. */
