@@ -1,9 +1,11 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AppConfigModule } from './config';
+import { QueueConfig } from './config/queue.config';
 import { DatabaseModule } from './database/database.module';
 import { EventsModule } from './events/events.module';
 import { RequestIdMiddleware } from './middleware/request-id.middleware';
@@ -66,7 +68,21 @@ import { AuditModule } from './modules/audit/audit.module';
             : { target: 'pino-pretty', options: { singleLine: true } },
       },
     }),
-    ThrottlerModule.forRoot([{ name: 'api', ttl: 60_000, limit: 120 }]),
+    // Two rate-limit tiers, both driven by THROTTLE_* env vars. Every route is
+    // subject to both named throttlers, but AstroidThrottlerGuard enforces only
+    // the one matching the route's @ThrottleTierDecorator tier ('api' default,
+    // 'auth' for the sensitive auth endpoints).
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const { throttle } = config.getOrThrow<QueueConfig>('queue');
+        const ttl = throttle.ttl * 1000; // seconds → milliseconds
+        return [
+          { name: 'api', ttl, limit: throttle.apiLimit },
+          { name: 'auth', ttl, limit: throttle.authLimit },
+        ];
+      },
+    }),
 
     DatabaseModule,
     EventsModule,

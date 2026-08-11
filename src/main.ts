@@ -3,6 +3,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
+import helmet from 'helmet';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { PrismaService } from './database/prisma.service';
 import { AppConfig } from './config/app.config';
@@ -14,6 +16,38 @@ async function bootstrap() {
 
   // Structured logging (nestjs-pino)
   app.useLogger(app.get(PinoLogger));
+
+  // Security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options,
+  // Referrer-Policy). Swagger UI — served only outside production — needs inline
+  // styles/scripts, so CSP is relaxed there and kept at helmet's strict default
+  // in production.
+  const isProduction = appConfig.nodeEnv === 'production';
+  app.use(
+    helmet({
+      contentSecurityPolicy: isProduction
+        ? undefined
+        : {
+            directives: {
+              defaultSrc: ["'self'"],
+              scriptSrc: ["'self'", "'unsafe-inline'"],
+              styleSrc: ["'self'", "'unsafe-inline'"],
+              imgSrc: ["'self'", 'data:', 'https:'],
+            },
+          },
+      hsts: { maxAge: 15_552_000, includeSubDomains: true, preload: true },
+      referrerPolicy: { policy: 'no-referrer' },
+    }),
+  );
+
+  // Permissions-Policy is not part of helmet's defaults; disable powerful
+  // browser features the API never uses.
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader(
+      'Permissions-Policy',
+      'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+    );
+    next();
+  });
 
   // CORS
   app.enableCors({ origin: appConfig.corsOrigins, credentials: true });
