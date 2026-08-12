@@ -42,6 +42,7 @@ export const stellarEnvSchema = z.object({
   STELLAR_NETWORK: z.enum(['testnet', 'public', 'futurenet']).default('testnet'),
   STELLAR_HORIZON_URL: z.string().default('https://horizon-testnet.stellar.org'),
   STELLAR_SOROBAN_RPC_URL: z.string().default('https://soroban-testnet.stellar.org'),
+  STELLAR_REGISTRY_CONTRACT_ID: z.string().optional().default(''),
   STELLAR_USE_MOCK: z
     .enum(['true', 'false'])
     .default('true')
@@ -65,6 +66,13 @@ export const throttleEnvSchema = z.object({
   THROTTLE_AUTH_LIMIT: z.coerce.number().int().positive().default(10),
   THROTTLE_API_LIMIT: z.coerce.number().int().positive().default(120),
   THROTTLE_TTL: z.coerce.number().int().positive().default(60),
+});
+
+export const aiEnvSchema = z.object({
+  AI_PROVIDER: z.string().default('nvidia'),
+  AI_PROVIDER_KEY: z.string().min(1, 'AI_PROVIDER_KEY is required'),
+  AI_BASE_URL: z.string().default('https://integrate.api.nvidia.com/v1'),
+  AI_MODEL: z.string().default('meta/llama-3.1-70b-instruct'),
 });
 
 /**

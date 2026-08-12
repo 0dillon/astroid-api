@@ -6,6 +6,7 @@ import { authConfig } from './auth.config';
 import { stellarConfig } from './stellar.config';
 import { storageConfig } from './storage.config';
 import { queueConfig } from './queue.config';
+import { aiConfig } from './ai.config';
 
 export * from './app.config';
 export * from './database.config';
@@ -14,6 +15,7 @@ export * from './auth.config';
 export * from './stellar.config';
 export * from './storage.config';
 export * from './queue.config';
+export * from './ai.config';
 
 /**
  * Global configuration module. Every slice is registered via `registerAs` and
@@ -31,5 +33,6 @@ export const AppConfigModule = ConfigModule.forRoot({
     stellarConfig,
     storageConfig,
     queueConfig,
+    aiConfig,
   ],
 });

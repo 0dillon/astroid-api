@@ -19,3 +19,15 @@ export class DecideProposalDto {
   @ApiPropertyOptional({ description: 'Optional reviewer note' })
   comment?: string;
 }
+
+export const decisionCommentSchema = z
+  .object({
+    comment: z.string().max(500).optional(),
+  })
+  .strict();
+export type DecisionCommentInput = z.infer<typeof decisionCommentSchema>;
+
+export class DecisionCommentDto {
+  @ApiPropertyOptional({ description: 'Optional reviewer note' })
+  comment?: string;
+}

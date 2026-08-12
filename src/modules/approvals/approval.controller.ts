@@ -1,8 +1,13 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { ApprovalDecision, UserRole } from '@prisma/client';
 import { ApprovalService } from './approval.service';
-import { decideProposalSchema, DecideProposalInput } from './approval.dto';
+import {
+  decideProposalSchema,
+  DecideProposalInput,
+  decisionCommentSchema,
+  DecisionCommentInput,
+} from './approval.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe';
