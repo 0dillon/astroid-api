@@ -28,7 +28,9 @@ export class AiController {
 
   @Post('chat')
   @ApiOperation({ summary: 'Send a message to the AI assistant' })
-  chat(@Body(new ZodValidationPipe(chatSchema)) body: ChatInput) {
-    return this.aiService.chat(body.message);
+  async chat(@Body(new ZodValidationPipe(chatSchema)) body: ChatInput) {
+    const reply = await this.aiService.chat(body.message);
+    return { reply };
   }
+
 }
