@@ -9,11 +9,11 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "nest build",
+    "build": "node_modules/.bin/nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
+    "start": "node_modules/.bin/nest start",
+    "start:dev": "node_modules/.bin/nest start --watch",
+    "start:debug": "node_modules/.bin/nest start --debug --watch",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "typecheck": "tsc --noEmit",
@@ -60,6 +60,7 @@
     "@nestjs/cli": "10.4.9",
     "@nestjs/schematics": "10.2.3",
     "@nestjs/testing": "10.4.15",
+
     "@types/express": "5.0.0",
     "@types/node": "22.10.5",
     "@types/passport-jwt": "4.0.1",
