@@ -33,6 +33,7 @@ import { MemoryModule } from './modules/memory/memory.module';
 import { WebhookModule } from './modules/webhooks/webhook.module';
 import { StellarModule } from './modules/stellar/stellar.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { AiModule } from './modules/ai/ai.module';
 
 /**
  * Root application module. Wires the global infrastructure (config, logging,
@@ -104,6 +105,7 @@ import { AuditModule } from './modules/audit/audit.module';
     WebhookModule,
     StellarModule,
     AuditModule,
+    AiModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
