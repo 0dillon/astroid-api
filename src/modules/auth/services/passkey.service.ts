@@ -62,7 +62,7 @@ export class PasskeyService {
     }
 
     // 2. Fetch the stored challenge
-    const challengeRecord = await (this.prisma as any).passkeyChallenge?.findFirst({
+    const challengeRecord = await this.prisma.passkeyChallenge.findFirst({
       where: { userId, expiresAt: { gt: new Date() } },
     });
 
@@ -94,9 +94,9 @@ export class PasskeyService {
     const publicKey = bufferToBase64url(webauthnCredential.publicKey);
 
     // 4. Atomic: invalidate challenge + persist credential
-    const saved = await this.prisma.$transaction(async (tx: any) => {
+    const saved = await this.prisma.$transaction(async (tx) => {
       // Invalidate the challenge to prevent replay
-      await (tx as any).passkeyChallenge?.deleteMany({
+      await tx.passkeyChallenge.deleteMany({
         where: { userId },
       });
 

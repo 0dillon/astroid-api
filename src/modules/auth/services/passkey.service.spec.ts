@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
+import { ConfigService } from '@nestjs/config';
 import { PasskeyService } from './passkey.service';
 import { PrismaService } from '../../../database/prisma.service';
 
@@ -11,8 +13,13 @@ vi.mock('@simplewebauthn/server', () => ({
 
 // ── Helpers ──
 
+interface MockTx {
+  passkeyChallenge: { deleteMany: Mock };
+  passkeyCredential: { create: Mock };
+}
+
 function buildMockPrisma() {
-  const txMock = {
+  const txMock: MockTx = {
     passkeyChallenge: { deleteMany: vi.fn().mockResolvedValue({ count: 1 }) },
     passkeyCredential: { create: vi.fn() },
   };
@@ -28,7 +35,7 @@ function buildMockPrisma() {
     passkeyCredential: {
       create: vi.fn(),
     },
-    $transaction: vi.fn(async (cb: (tx: typeof txMock) => Promise<unknown>) => {
+    $transaction: vi.fn(async (cb: (tx: MockTx) => Promise<MockTx>) => {
       return cb(txMock);
     }),
     _txMock: txMock,
@@ -72,17 +79,17 @@ describe('PasskeyService', () => {
     vi.clearAllMocks();
     prisma = buildMockPrisma();
     config = buildMockConfig();
-    service = new PasskeyService(prisma as unknown as PrismaService, config as any);
+    service = new PasskeyService(prisma as unknown as PrismaService, config as unknown as ConfigService);
   });
 
   describe('verifyRegistration', () => {
     it('should verify and persist a valid registration credential', async () => {
       // Setup mocks
-      (prisma.user.findUnique as any).mockResolvedValue({
+      prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         email: 'test@example.com',
       });
-      (prisma.passkeyChallenge.findFirst as any).mockResolvedValue({
+      prisma.passkeyChallenge.findFirst.mockResolvedValue({
         id: 'ch-1',
         userId: 'user-1',
         challenge: 'test-challenge-abc123',
@@ -141,7 +148,7 @@ describe('PasskeyService', () => {
         data: {
           userId: 'user-1',
           credentialId: 'cred-id-123',
-          publicKey: expect.any(String),
+          publicKey: expect.stringMatching(/.+/),
           counter: 0,
           deviceName: 'YubiKey 5',
           userAgent: 'Mozilla/5.0',
@@ -151,13 +158,13 @@ describe('PasskeyService', () => {
       // Verify return shape
       expect(result).toEqual({
         credentialId: 'cred-id-123',
-        publicKey: expect.any(String),
+        publicKey: expect.stringMatching(/.+/),
         counter: 0,
       });
     });
 
     it('should throw NotFoundException when user does not exist', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(
         service.verifyRegistration('nonexistent-user', VALID_INPUT),
@@ -165,11 +172,11 @@ describe('PasskeyService', () => {
     });
 
     it('should throw ValidationException when no active challenge exists', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue({
+      prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         email: 'test@example.com',
       });
-      (prisma.passkeyChallenge.findFirst as any).mockResolvedValue(null);
+      prisma.passkeyChallenge.findFirst.mockResolvedValue(null);
 
       await expect(
         service.verifyRegistration('user-1', VALID_INPUT),
@@ -177,11 +184,11 @@ describe('PasskeyService', () => {
     });
 
     it('should throw UnauthorizedException when verification fails', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue({
+      prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         email: 'test@example.com',
       });
-      (prisma.passkeyChallenge.findFirst as any).mockResolvedValue({
+      prisma.passkeyChallenge.findFirst.mockResolvedValue({
         id: 'ch-1',
         userId: 'user-1',
         challenge: 'test-challenge-abc123',
@@ -200,11 +207,11 @@ describe('PasskeyService', () => {
     });
 
     it('should pass user agent to the credential record', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue({
+      prisma.user.findUnique.mockResolvedValue({
         id: 'user-1',
         email: 'test@example.com',
       });
-      (prisma.passkeyChallenge.findFirst as any).mockResolvedValue({
+      prisma.passkeyChallenge.findFirst.mockResolvedValue({
         id: 'ch-1',
         userId: 'user-1',
         challenge: 'test-challenge-abc123',
