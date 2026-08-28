@@ -637,6 +637,7 @@ model PasskeyCredential {
   publicKey    String
   counter      Int      @default(0)
   deviceName   String?
+  userAgent    String?
   createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
