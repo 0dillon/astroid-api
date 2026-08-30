@@ -24,7 +24,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "db:seed": "ts-node prisma/seed.ts"
+    "db:seed": "ts-node prisma/seed.ts",
+    "db:verify": "bash scripts/verify-migrations.sh",
+    "db:verify": "bash scripts/verify-migrations.sh"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
