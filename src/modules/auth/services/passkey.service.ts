@@ -131,11 +131,11 @@ export class PasskeyService {
 
     return {
       challenge: options.challenge,
-      rp: options.rp,
-      user: options.user,
-      pubKeyCredParams: options.pubKeyCredParams,
-      timeout: options.timeout,
-      attestation: options.attestation,
+      rp: options.rp as { name: string; id: string },
+      user: options.user as { id: string; name: string; displayName: string },
+      pubKeyCredParams: options.pubKeyCredParams as Array<{ alg: number; type: string }>,
+      timeout: options.timeout ?? 60000,
+      attestation: options.attestation ?? 'none',
       authenticatorSelection: options.authenticatorSelection as Record<string, unknown>,
     };
   }
@@ -275,13 +275,13 @@ export class PasskeyService {
     return {
       challenge: options.challenge,
       rpId: this.auth.passkey.rpId,
-      timeout: options.timeout,
-      allowCredentials: options.allowCredentials.map((cred) => ({
+      timeout: options.timeout ?? 60000,
+      allowCredentials: (options.allowCredentials ?? []).map((cred) => ({
         id: cred.id,
-        type: 'public-key',
+        type: 'public-key' as const,
         transports: cred.transports as string[] | undefined,
       })),
-      userVerification: options.userVerification,
+      userVerification: options.userVerification ?? 'preferred',
     };
   }
 
