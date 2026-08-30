@@ -1,10 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import { BalanceWorker, BalanceSyncJob } from './balance.worker';
-import { StellarClient, StellarBalance } from '../../integrations/stellar';
+import { StellarClient, StellarBalance } from '../integrations/stellar/stellar.interface';
 import { BalanceCacheService } from '../modules/wallets/services/balance-cache.service';
 import { EventBusService } from '../events/event-bus.service';
 
-function buildMockStellarClient(balances: StellarBalance[] = []): StellarClient {
+interface MockStellarClient {
+  generateKeypair: Mock;
+  isValidAddress: Mock;
+  getBalances: Mock;
+  getNativeBalance: Mock;
+  buildPaymentXdr: Mock;
+  submitPayment: Mock;
+  getTransaction: Mock;
+}
+
+function buildMockStellarClient(balances: StellarBalance[] = []): MockStellarClient {
   return {
     generateKeypair: vi.fn(),
     isValidAddress: vi.fn().mockReturnValue(true),
@@ -43,7 +54,7 @@ function buildJob(overrides: Partial<BalanceSyncJob> = {}) {
 }
 
 describe('BalanceWorker', () => {
-  let stellarClient: ReturnType<typeof buildMockStellarClient>;
+  let stellarClient: MockStellarClient;
   let cacheService: ReturnType<typeof buildMockCacheService>;
   let eventBus: ReturnType<typeof buildMockEventBus>;
   let worker: BalanceWorker;

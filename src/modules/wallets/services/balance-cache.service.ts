@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
-import { StellarBalance } from '../../integrations/stellar';
+import { StellarBalance } from '../../../integrations/stellar';
 
 export interface CachedBalance {
   address: string;
