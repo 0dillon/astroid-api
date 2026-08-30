@@ -9,15 +9,16 @@ function buildMockContext(overrides: {
   url?: string;
   method?: string;
   body?: Record<string, unknown>;
-  user?: { id: string; organizationId: string };
+  user?: { id: string; organizationId: string } | null;
   statusCode?: number;
 } = {}) {
+  const hasUser = 'user' in overrides;
   const req = {
     originalUrl: overrides.url ?? '/v1/transactions',
     method: overrides.method ?? 'POST',
     body: overrides.body ?? { amount: 100, asset: 'XLM' },
     headers: { 'user-agent': 'TestAgent/1.0' },
-    user: overrides.user ?? { id: 'user-1', organizationId: 'org-1' },
+    user: hasUser ? overrides.user : { id: 'user-1', organizationId: 'org-1' },
     socket: { remoteAddress: '127.0.0.1' },
   };
 
@@ -118,7 +119,7 @@ describe('AuditInterceptor', () => {
   });
 
   it('should not audit requests without organizationId', async () => {
-    const ctx = buildMockContext({ user: undefined });
+    const ctx = buildMockContext({ user: null });
     const next = buildCallHandler();
 
     await interceptor.intercept(ctx, next).toPromise();
