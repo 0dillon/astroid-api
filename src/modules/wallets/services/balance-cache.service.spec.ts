@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigService } from '@nestjs/config';
-import { BalanceCacheService, CachedBalance } from './balance-cache.service';
+import { BalanceCacheService } from './balance-cache.service';
 
 function buildMockConfig(overrides: Record<string, unknown> = {}) {
   return {

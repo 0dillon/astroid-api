@@ -30,7 +30,7 @@ export interface BalanceThresholdConfig {
 @Injectable()
 export class BalanceCacheService {
   private readonly logger = new Logger(BalanceCacheService.name);
-  private readonly redis: Redis | null = null;
+  private redis: Redis | null = null;
   private readonly ttlSeconds: number;
   private readonly thresholds: BalanceThresholdConfig;
 
@@ -56,8 +56,8 @@ export class BalanceCacheService {
           },
           lazyConnect: true,
         });
-        this.redis.connect().catch((err) => {
-          this.logger.warn(`Redis connection failed, using in-memory cache: ${(err as Error).message}`);
+        this.redis.connect().catch((err: Error) => {
+          this.logger.warn(`Redis connection failed, using in-memory cache: ${err.message}`);
           this.redis = null;
         });
       }

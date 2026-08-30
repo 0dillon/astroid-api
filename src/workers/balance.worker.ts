@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { StellarBalance, STELLAR_CLIENT, StellarClient } from '../integrations/stellar';
+import { STELLAR_CLIENT, StellarClient } from '../integrations/stellar';
 import { BalanceCacheService } from '../modules/wallets/services/balance-cache.service';
 import { EventBusService } from '../events/event-bus.service';
 import { DomainEventName } from '../events/event-names';
