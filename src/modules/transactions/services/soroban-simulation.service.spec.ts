@@ -80,7 +80,7 @@ describe('SorobanSimulationService', () => {
     it('should throw DomainException for invalid base64 XDR', async () => {
       await expect(
         service.simulate({
-          transactionXdr: 'not-valid-base64!!!',
+          transactionXdr: '!!!not-base64-at-all&&&',
           organizationId: 'org-1',
         }),
       ).rejects.toThrow('not valid base64');
@@ -131,7 +131,7 @@ describe('SorobanSimulationService', () => {
         service.simulate({
           transactionXdr: buildValidXdr(),
           organizationId: 'org-1',
-          maxRiskScore: 10,
+          maxRiskScore: -1,
         }),
       ).rejects.toThrow('exceeds maximum allowed');
     });
@@ -158,6 +158,7 @@ describe('SorobanSimulationService', () => {
       const result = await service.simulate({
         transactionXdr: buildValidXdr(),
         organizationId: 'org-1',
+        maxRiskScore: 100,
         riskFactors: {
           amount: 50000,
           asset: 'XLM',

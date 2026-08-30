@@ -3,16 +3,16 @@ import {
   SOROBAN_CLIENT,
   SorobanClient,
   SorobanSimulationResult,
-} from '../../integrations/stellar/soroban.interface';
-import { RiskEngine } from '../risk/risk.engine';
-import { RiskAssessment, RiskFactorsInput } from '../risk/risk.types';
-import { ErrorCode } from '../../common/constants/error-codes';
+} from '../../../integrations/stellar/soroban.interface';
+import { RiskEngine } from '../../risk/risk.engine';
+import { RiskAssessment, RiskFactorsInput } from '../../risk/risk.types';
+import { ErrorCode } from '../../../common/constants/error-codes';
 import {
   DomainException,
   RiskTooHighException,
-} from '../../common/exceptions/domain.exception';
-import { EventBusService } from '../../events/event-bus.service';
-import { DomainEventName } from '../../events/event-names';
+} from '../../../common/exceptions/domain.exception';
+import { EventBusService } from '../../../events/event-bus.service';
+import { DomainEventName } from '../../../events/event-names';
 
 export interface SimulationInput {
   /** The base64-encoded transaction envelope XDR. */
@@ -157,6 +157,13 @@ export class SorobanSimulationService {
         'Transaction XDR is required',
       );
     }
+    // Validate base64url/base64 format
+    if (!/^[A-Za-z0-9+/_-]*={0,2}$/.test(xdr)) {
+      throw new DomainException(
+        ErrorCode.INVALID_STELLAR_TRANSACTION,
+        'Transaction XDR is not valid base64',
+      );
+    }
     try {
       Buffer.from(xdr, 'base64');
     } catch {
@@ -171,11 +178,9 @@ export class SorobanSimulationService {
     // Build risk factors from simulation result when not explicitly provided
     const eventCount = result.events.length;
     const hasWriteFootprint = result.footprint.readWrite.length > 0;
-    const cpuCost = result.cost.cpuInstructions;
     const feeStroops = parseInt(result.minResourceFee, 10);
 
     // Heuristic: higher resource usage correlates with higher risk
-    const normalizedCpu = Math.min(cpuCost / 1_000_000, 1);
     const normalizedFee = Math.min(feeStroops / 10_000_000, 1);
     const amountEstimate = normalizedFee * 10_000;
 
