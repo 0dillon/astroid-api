@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConfigService } from '@nestjs/config';
 import { SorobanSimulationService } from './soroban-simulation.service';
 import { SorobanClient, SorobanSimulationResult } from '../../../integrations/stellar/soroban.interface';
 import { RiskEngine } from '../../risk/risk.engine';
@@ -20,15 +19,6 @@ function buildMockSorobanClient(overrides: Partial<SorobanSimulationResult> = {}
       transactionHash: 'mock-hash-123',
       ...overrides,
     } as SorobanSimulationResult),
-  };
-}
-
-function buildMockConfig() {
-  return {
-    getOrThrow: vi.fn().mockReturnValue({
-      network: 'testnet',
-      sorobanRpcUrl: 'http://localhost:8000',
-    }),
   };
 }
 
@@ -55,7 +45,6 @@ describe('SorobanSimulationService', () => {
       sorobanClient,
       new RiskEngine(),
       eventBus as unknown as EventBusService,
-      buildMockConfig() as unknown as ConfigService,
     );
   });
 

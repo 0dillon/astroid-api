@@ -1,11 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   SOROBAN_CLIENT,
   SorobanClient,
   SorobanSimulationResult,
 } from '../../integrations/stellar/soroban.interface';
-import { StellarConfig } from '../../config/stellar.config';
 import { RiskEngine } from '../risk/risk.engine';
 import { RiskAssessment, RiskFactorsInput } from '../risk/risk.types';
 import { ErrorCode } from '../../common/constants/error-codes';
@@ -68,16 +66,12 @@ export interface SimulationOutput {
 @Injectable()
 export class SorobanSimulationService {
   private readonly logger = new Logger(SorobanSimulationService.name);
-  private readonly stellar: StellarConfig;
 
   constructor(
     @Inject(SOROBAN_CLIENT) private readonly sorobanClient: SorobanClient,
     private readonly riskEngine: RiskEngine,
     private readonly eventBus: EventBusService,
-    config: ConfigService,
-  ) {
-    this.stellar = config.getOrThrow<StellarConfig>('stellar');
-  }
+  ) {}
 
   /**
    * Simulates a Soroban transaction and evaluates its risk profile.
