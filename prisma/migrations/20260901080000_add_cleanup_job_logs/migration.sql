@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "cleanup_job_logs" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT,
