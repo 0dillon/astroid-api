@@ -45,7 +45,7 @@ export class BudgetRepository {
 
   async reserveBudget(organizationId: string, id: string, amount: Prisma.Decimal): Promise<Budget> {
     return this.prisma.$transaction(async (tx) => {
-      const rows = await tx.$queryRaw<any[]>`SELECT * FROM "budgets" WHERE id = ${id} AND "organizationId" = ${organizationId} FOR UPDATE`;
+      const rows = await tx.$queryRaw<Budget[]>`SELECT * FROM "budgets" WHERE id = ${id} AND "organizationId" = ${organizationId} FOR UPDATE`;
       if (!rows || rows.length === 0) {
         throw new Error('NotFoundException');
       }
@@ -60,7 +60,7 @@ export class BudgetRepository {
       
       return tx.budget.update({
         where: { id },
-        data: { spent: spentAfter }
+        data: { spent: spentAfter },
       });
     });
   }

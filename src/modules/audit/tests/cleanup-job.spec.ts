@@ -1,32 +1,30 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuditCleanupQueue } from '../queues/audit-cleanup.queue';
 import { PrismaService } from '../../../database/prisma.service';
-import { EventBusService } from '../../../events/event-bus.service';
 import { ConfigService } from '@nestjs/config';
-import { vi } from 'vitest';
 import { Job } from 'bullmq';
 
 describe('AuditCleanupQueue', () => {
   let queue: AuditCleanupQueue;
-  let mockPrisma: Partial<PrismaService>;
-  let mockEventBus: Partial<EventBusService>;
+  let mockPrisma: {
+    organization: { findMany: ReturnType<typeof vi.fn> };
+    auditLog: { findMany: ReturnType<typeof vi.fn>; deleteMany: ReturnType<typeof vi.fn> };
+    cleanupJobLog: { create: ReturnType<typeof vi.fn> };
+  };
   let mockConfigService: Partial<ConfigService>;
 
   beforeEach(() => {
     mockPrisma = {
       organization: {
         findMany: vi.fn().mockResolvedValue([{ id: 'org-1' }]),
-      } as any,
+      },
       auditLog: {
         findMany: vi.fn().mockResolvedValueOnce([{ id: 'log-1' }]).mockResolvedValue([]),
         deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
-      } as any,
+      },
       cleanupJobLog: {
         create: vi.fn().mockResolvedValue({}),
-      } as any,
-    };
-
-    mockEventBus = {
-      emit: vi.fn(),
+      },
     };
 
     mockConfigService = {
@@ -34,9 +32,8 @@ describe('AuditCleanupQueue', () => {
     };
 
     queue = new AuditCleanupQueue(
-      mockPrisma as PrismaService,
-      mockEventBus as EventBusService,
-      mockConfigService as ConfigService
+      mockPrisma as unknown as PrismaService,
+      mockConfigService as ConfigService,
     );
   });
 
@@ -56,10 +53,10 @@ describe('AuditCleanupQueue', () => {
       expect.objectContaining({
         data: expect.objectContaining({
           jobName: 'audit-cleanup',
-          recordsDeleted: 1, // 1 from org loop, 1 from system loop because mockResolvedValueOnce is shared among findMany calls
+          recordsDeleted: 1,
           status: 'SUCCESS',
         }),
-      })
+      }),
     );
   });
 });

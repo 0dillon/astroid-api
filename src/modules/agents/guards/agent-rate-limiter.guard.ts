@@ -24,7 +24,7 @@ export class AgentRateLimiterGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request & { user?: any }>();
+    const request = context.switchToHttp().getRequest<Request & { user?: { organizationId?: string } }>();
     const response = context.switchToHttp().getResponse<Response>();
     
     const rawAgentId = request.params?.id;
@@ -45,11 +45,17 @@ export class AgentRateLimiterGuard implements CanActivate {
     } else {
       try {
         const agent = await this.agentService.getOrThrow(organizationId, agentId);
-        const metadata = agent.metadata as Record<string, any>;
+        const metadata = agent.metadata as Record<string, unknown> | null;
         if (metadata && typeof metadata.rateLimit === 'number') {
           limit = metadata.rateLimit;
-        } else if (metadata && metadata.rateLimit && typeof metadata.rateLimit.limit === 'number') {
-          limit = metadata.rateLimit.limit;
+        } else if (
+          metadata &&
+          typeof metadata.rateLimit === 'object' &&
+          metadata.rateLimit !== null &&
+          'limit' in metadata.rateLimit &&
+          typeof (metadata.rateLimit as { limit: unknown }).limit === 'number'
+        ) {
+          limit = (metadata.rateLimit as { limit: number }).limit;
         }
         await this.redis.set(cacheKey, limit, 'EX', this.cacheTtlSeconds);
       } catch (err) {

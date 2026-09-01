@@ -191,11 +191,12 @@ export class BudgetService {
   async reserveBudget(organizationId: string, budgetId: string, amount: number) {
     try {
       return await this.repository.reserveBudget(organizationId, budgetId, new Decimal(amount));
-    } catch (error: any) {
-      if (error.message.includes('NotFoundException')) {
+    } catch (error: unknown) {
+      const err = error as Error;
+      if (err.message && err.message.includes('NotFoundException')) {
         throw new NotFoundException('Budget', budgetId);
       }
-      if (error.message.includes('ConflictException')) {
+      if (err.message && err.message.includes('ConflictException')) {
         throw new ConflictException('BudgetExceeded: Allocation exceeds the budget remaining balance');
       }
       throw error;

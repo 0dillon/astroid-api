@@ -1,10 +1,9 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AgentRateLimiterGuard } from '../guards/agent-rate-limiter.guard';
 import { AgentService } from '../agent.service';
 import { DomainException } from '../../../common/exceptions/domain.exception';
-import { ErrorCode } from '../../../common/constants/error-codes';
-import { vi } from 'vitest';
 
 vi.mock('ioredis', () => {
   return {
@@ -32,7 +31,7 @@ describe('AgentRateLimiterGuard', () => {
 
   beforeEach(() => {
     mockConfigService = {
-      get: vi.fn().mockImplementation((key, defaultValue) => defaultValue),
+      get: vi.fn().mockImplementation((_key, defaultValue) => defaultValue),
     };
 
     mockAgentService = {
@@ -71,7 +70,7 @@ describe('AgentRateLimiterGuard', () => {
       expire: vi.fn().mockReturnThis(),
       exec: vi.fn().mockResolvedValue([[null, 1], [null, 5], [null, 1], [null, 1]]),
     };
-    (guard as any).redis.multi = vi.fn(() => mockMulti);
+    (guard as unknown as { redis: { multi: () => typeof mockMulti } }).redis.multi = vi.fn(() => mockMulti);
 
     const mockResponse = { setHeader: vi.fn() };
     const mockContext = {

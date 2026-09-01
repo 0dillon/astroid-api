@@ -1,9 +1,8 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { PrismaService } from '../../../database/prisma.service';
 import { Queues } from '../../../queues/queues.constants';
-import { EventBusService } from '../../../events/event-bus.service';
 import { ConfigService } from '@nestjs/config';
 
 @Processor(Queues.AuditCleanup)
@@ -12,8 +11,7 @@ export class AuditCleanupQueue extends WorkerHost {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly eventBus: EventBusService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     super();
   }
@@ -38,7 +36,7 @@ export class AuditCleanupQueue extends WorkerHost {
         const retentionDate = new Date();
         retentionDate.setDate(retentionDate.getDate() - retentionDays);
 
-        let orgDeleted = 0;
+        let _orgDeleted = 0;
         while (true) {
           const logsToDelete = await this.prisma.auditLog.findMany({
             where: { organizationId: org.id, createdAt: { lt: retentionDate } },
@@ -55,7 +53,7 @@ export class AuditCleanupQueue extends WorkerHost {
             where: { id: { in: ids } },
           });
 
-          orgDeleted += count;
+          _orgDeleted += count;
           totalDeleted += count;
 
           if (count < chunkLimit) {

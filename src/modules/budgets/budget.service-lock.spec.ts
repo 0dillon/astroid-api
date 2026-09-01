@@ -304,8 +304,8 @@ describe('BudgetService - reserveBudget concurrency', () => {
   let repository: BudgetRepository;
   let service: BudgetService;
   beforeEach(() => {
-    repository = new BudgetRepository({} as any);
-    service = new BudgetService(repository, {} as any, {} as any);
+    repository = new BudgetRepository({} as unknown as ConstructorParameters<typeof BudgetRepository>[0]);
+    service = new BudgetService(repository, {} as unknown as EventBusService, {} as unknown as RedisLock);
   });
 
     it('should securely process parallel reserves without exceeding limit', async () => {
@@ -313,13 +313,13 @@ describe('BudgetService - reserveBudget concurrency', () => {
       const limitAmount = new Prisma.Decimal(100);
 
       // Mock the repo's reserveBudget to simulate atomic row-level behavior locally
-      vi.spyOn(repository, 'reserveBudget').mockImplementation(async (orgId, id, amount) => {
+      vi.spyOn(repository, 'reserveBudget').mockImplementation(async (_orgId, _id, amount) => {
         const spentAfter = spent.plus(amount);
         if (spentAfter.greaterThan(limitAmount)) {
           throw new Error('ConflictException: BudgetExceeded');
         }
         spent = spentAfter;
-        return { spent: spentAfter } as any;
+        return { spent: spentAfter } as unknown as Budget;
       });
 
       // Fire 10 concurrent requests to reserve 15 budget each.

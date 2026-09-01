@@ -221,7 +221,7 @@ export class AgentController {
   @ApiOperation({ summary: 'Trigger an execution for the agent' })
   @ApiResponse({ status: 200, description: 'Execution triggered' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
-  async execute(@CurrentUser('organizationId') organizationId: string, @Param('id') id: string) {
+  async execute(@CurrentUser('organizationId') _organizationId: string, @Param('id') _id: string) {
     return { success: true, message: 'Execution triggered' };
   }
 }

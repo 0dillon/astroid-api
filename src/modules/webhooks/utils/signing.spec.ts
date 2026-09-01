@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+import { createHmac } from 'crypto';
 import { signWebhookPayload } from './signing';
 
 describe('signWebhookPayload', () => {
@@ -8,7 +10,7 @@ describe('signWebhookPayload', () => {
     
     const signature = signWebhookPayload(secret, timestamp, payload);
     
-    const expected = require('crypto').createHmac('sha256', secret).update(timestamp + '.' + payload).digest('hex');
+    const expected = createHmac('sha256', secret).update(timestamp + '.' + payload).digest('hex');
     expect(signature).toBe(expected);
   });
 });
