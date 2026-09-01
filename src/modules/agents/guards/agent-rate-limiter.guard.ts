@@ -27,10 +27,12 @@ export class AgentRateLimiterGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request & { user?: any }>();
     const response = context.switchToHttp().getResponse<Response>();
     
-    const agentId = request.params.id;
-    if (!agentId) return true;
+    const rawAgentId = request.params?.id;
+    const agentId = Array.isArray(rawAgentId) ? rawAgentId[0] : rawAgentId;
+    if (!agentId || typeof agentId !== 'string') return true;
+
     const organizationId = request.user?.organizationId;
-    if (!organizationId) return true;
+    if (!organizationId || typeof organizationId !== 'string') return true;
 
     let limit = this.defaultLimit;
     const windowSeconds = this.defaultWindowSeconds;

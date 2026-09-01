@@ -26,13 +26,13 @@ export class WebhookDeliveryWorker {
 
     const execute = async (): Promise<void> => {
       this.logger.log(
-        \deliver \ -> webhook \ (attempt \)\,
+        `deliver ${job.data.event} -> webhook ${job.data.webhookId} (attempt ${job.data.attempt})`,
       );
       
       const { url, secret, payload } = job.data;
       if (!url || !secret) {
-         this.logger.warn(\Webhook \ missing url or secret\);
-         return;
+        this.logger.warn(`Webhook ${job.data.webhookId} missing url or secret`);
+        return;
       }
       
       const timestamp = Math.floor(Date.now() / 1000).toString();
@@ -44,13 +44,13 @@ export class WebhookDeliveryWorker {
         headers: {
           'Content-Type': 'application/json',
           'X-Astroid-Signature': signature,
-          'X-Astroid-Timestamp': timestamp
+          'X-Astroid-Timestamp': timestamp,
         },
-        body
+        body,
       });
       
       if (!response.ok) {
-        throw new Error(\Failed to deliver webhook: \\);
+        throw new Error(`Failed to deliver webhook: ${response.statusText}`);
       }
     };
 

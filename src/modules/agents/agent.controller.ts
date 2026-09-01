@@ -7,14 +7,6 @@ import {
   ApiParam,
   ApiBody,
   ApiQuery,
-  @Post(':id/execute')
-  @UseGuards(AgentRateLimiterGuard)
-  @ApiOperation({ summary: 'Trigger an execution for the agent' })
-  @ApiResponse({ status: 200, description: 'Execution triggered' })
-  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
-  async execute(@CurrentUser('organizationId') organizationId: string, @Param('id') id: string) {
-    return { success: true, message: 'Execution triggered' };
-  }
 } from '@nestjs/swagger';
 import { AgentStatus, UserRole } from '@prisma/client';
 import { AgentService } from './agent.service';
@@ -27,14 +19,6 @@ import {
   CreateAgentDto,
   updateAgentSchema,
   UpdateAgentInput,
-  @Post(':id/execute')
-  @UseGuards(AgentRateLimiterGuard)
-  @ApiOperation({ summary: 'Trigger an execution for the agent' })
-  @ApiResponse({ status: 200, description: 'Execution triggered' })
-  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
-  async execute(@CurrentUser('organizationId') organizationId: string, @Param('id') id: string) {
-    return { success: true, message: 'Execution triggered' };
-  }
 } from './agent.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -47,20 +31,12 @@ import { ApiEnvelope } from '../../common/decorators/api-envelope.decorator';
 import {
   SlidingWindowThrottlerGuard,
   SlidingWindowLimit,
-  @Post(':id/execute')
-  @UseGuards(AgentRateLimiterGuard)
-  @ApiOperation({ summary: 'Trigger an execution for the agent' })
-  @ApiResponse({ status: 200, description: 'Execution triggered' })
-  @ApiResponse({ status: 429, description: 'Rate limit exceeded' })
-  async execute(@CurrentUser('organizationId') organizationId: string, @Param('id') id: string) {
-    return { success: true, message: 'Execution triggered' };
-  }
 } from '../../common/guards/sliding-window-throttler.guard';
+import { AgentRateLimiterGuard } from './guards/agent-rate-limiter.guard';
 
 @ApiTags('agents')
 @ApiBearerAuth('access-token')
 @Controller('agents')
-import { AgentRateLimiterGuard } from './guards/agent-rate-limiter.guard';
 export class AgentController {
   constructor(private readonly agentService: AgentService) {}
 
